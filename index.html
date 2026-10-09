@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="day">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Climate Forecast | 3D Interactive Telemetry & Climate Action</title>
+
+    <!-- Google Fonts: Space Grotesk & Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Lucide Modern Vector Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- ========================================================= -->
+    <!-- POINT 8: PURE "WELCOME" INTRO SCREEN WITH FLUID GRADIENT  -->
+    <!-- ========================================================= -->
+    <div id="welcome-splash" class="welcome-splash-screen" role="dialog" aria-modal="true" aria-label="Welcome Splash">
+        <h1 class="welcome-gradient-text">Welcome</h1>
+    </div>
+
+    <!-- Custom location permission prompt -->
+    <div id="location-modal" class="location-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="location-modal-title">
+        <div class="location-modal glass-panel">
+            <button id="close-location-modal" class="location-modal-close" type="button" aria-label="Close location prompt">
+                <i data-lucide="x"></i>
+            </button>
+            <div class="location-modal-icon" aria-hidden="true">
+                <i data-lucide="map-pin"></i>
+            </div>
+            <h2 id="location-modal-title">Use your current location</h2>
+            <p>Allow location access to see accurate weather conditions for where you are right now.</p>
+            <button id="enable-location-btn" class="location-modal-action" type="button">
+                <i data-lucide="navigation"></i>
+                <span>Turn on location</span>
+            </button>
+            <p id="location-modal-status" class="location-modal-status" role="status"></p>
+        </div>
+    </div>
+
+    <div id="settings-modal" class="settings-modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+        <div class="settings-card glass-panel">
+            <button id="close-settings-btn" class="settings-close-btn" type="button" aria-label="Close settings">
+                <i data-lucide="x"></i>
+            </button>
+            <div class="settings-heading">
+                <span class="settings-icon"><i data-lucide="settings-2"></i></span>
+                <div>
+                    <span class="settings-eyebrow">Climate Forecast</span>
+                    <h2 id="settings-title">Settings</h2>
+                </div>
+            </div>
+            <div class="settings-section">
+                <span class="settings-label">About this website</span>
+                <p>Climate Forecast turns live weather, air quality and forecast data into a clear, interactive climate dashboard.</p>
+            </div>
+            <div class="settings-section">
+                <span class="settings-label">Contact us</span>
+                <a class="contact-email" href="mailto:abhigyanx2004@gmail.com">
+                    <i data-lucide="mail"></i>
+                    abhigyanx2004@gmail.com
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- POINT 9: GLOBAL BUFFERING & LOADING OVERLAY               -->
+    <!-- ========================================================= -->
+    <div id="global-loader" class="global-loader-overlay hidden" aria-live="polite">
+        <div class="loader-content glass-panel">
+            <div class="spinner-ring"></div>
+            <span class="loader-text">Loading...</span>
+            <span class="loader-subtext" id="loader-status">Synchronizing live atmospheric satellites</span>
+        </div>
+    </div>
+
+    <!-- OFFLINE ERROR STATE -->
+    <div id="offline-banner" class="offline-state hidden" role="alert" aria-live="assertive">
+        <div class="offline-state-card glass-panel">
+            <div class="offline-illustration" aria-hidden="true">
+                <svg viewBox="0 0 260 180" role="img">
+                    <defs>
+                        <linearGradient id="offline-sky" x1="0" x2="1" y1="0" y2="1">
+                            <stop offset="0" stop-color="#38bdf8"/>
+                            <stop offset="1" stop-color="#6366f1"/>
+                        </linearGradient>
+                        <linearGradient id="offline-ground" x1="0" x2="1">
+                            <stop offset="0" stop-color="#0ea5e9"/>
+                            <stop offset="1" stop-color="#8b5cf6"/>
+                        </linearGradient>
+                    </defs>
+                    <circle cx="130" cy="88" r="68" fill="url(#offline-sky)" opacity=".12"/>
+                    <path d="M31 143c33-29 61-35 91-17 24-18 55-20 107 17" fill="none" stroke="url(#offline-ground)" stroke-linecap="round" stroke-width="9"/>
+                    <path d="M79 92c-8-25 14-43 36-35 12-25 52-17 53 13 27-1 39 30 17 46H91c-8 0-12-8-12-24Z" fill="none" stroke="url(#offline-sky)" stroke-linejoin="round" stroke-width="7"/>
+                    <path d="m116 88 27 27m0-27-27 27" stroke="#f97316" stroke-linecap="round" stroke-width="7"/>
+                    <circle cx="218" cy="35" r="5" fill="#f59e0b"/>
+                    <circle cx="42" cy="48" r="4" fill="#a78bfa"/>
+                </svg>
+            </div>
+            <span class="offline-eyebrow">Connection interrupted</span>
+            <h2>Oops something went wrong</h2>
+            <p>We couldn't reach the weather service. Check your internet connection and try again.</p>
+            <button id="offline-retry-btn" class="offline-retry-btn" type="button">
+                <i data-lucide="refresh-cw"></i>
+                <span>Try again</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- HEADER: BRANDING, SEARCH & THEME TOGGLE (Points 6, 2, 3) -->
+    <!-- ========================================================= -->
+    <header class="app-header">
+        <div class="header-container">
+            
+            <!-- POINT 6: Climate Forecast Logo with Animated Symbol -->
+            <div class="brand-identity">
+                <button id="settings-btn" class="settings-btn" type="button" aria-label="Open settings" title="Settings">
+                    <i data-lucide="settings-2"></i>
+                </button>
+                <div class="brand-logo-symbol" aria-hidden="true">
+                    <svg class="climate-icon-svg" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <linearGradient id="brand-gradient" x1="8" y1="8" x2="56" y2="56">
+                                <stop offset="0" stop-color="#fbbf24" />
+                                <stop offset=".45" stop-color="#38bdf8" />
+                                <stop offset="1" stop-color="#8b5cf6" />
+                            </linearGradient>
+                        </defs>
+                        <circle class="logo-halo" cx="32" cy="32" r="27" />
+                        <circle class="sun-orbit" cx="32" cy="32" r="13" />
+                        <path class="cloud-path cloud-animated" d="M19 44h28a10 10 0 0 0 0-20 14 14 0 0 0-27-2 10 10 0 0 0-1 22z" />
+                        <path class="logo-spark" d="M10 18 6 15m48 4 4-4M15 52l-3 4m37-4 3 4" />
+                    </svg>
+                </div>
+                <div class="brand-title-wrap">
+                    <h1 class="brand-name">Climate Forecast</h1>
+                    <span class="brand-tagline">SDG 13 • Global Climate Telemetry</span>
+                </div>
+            </div>
+
+            <!-- POINT 10 & 11: City Search Bar with Precise Recommendations -->
+            <div class="search-section">
+                <form id="weather-search-form" class="search-form" autocomplete="off" onsubmit="return false;">
+                    <div class="search-input-wrapper">
+                        <i data-lucide="search" class="search-icon"></i>
+                        <input 
+                            type="search" 
+                            id="city-search-input" 
+                            class="search-input" 
+                            placeholder="Search worldwide city, capital, or region..." 
+                            aria-label="Search city location"
+                            enterkeyhint="search"
+                        >
+                        <button type="button" id="clear-search-btn" class="clear-btn hidden" aria-label="Clear search">
+                            <i data-lucide="x"></i>
+                        </button>
+                    </div>
+                    <!-- Recommendation Dropdown Menu -->
+                    <ul id="search-suggestions" class="suggestions-list glass-panel hidden" role="listbox" aria-label="City suggestions"></ul>
+                </form>
+            </div>
+
+            <!-- Header Actions: Day/Night Theme Switcher (Clock removed) -->
+            <div class="header-actions">
+                <button id="theme-toggle-btn" class="icon-toggle-btn" type="button" title="Toggle Day/Dark Theme" aria-label="Toggle theme">
+                    <i data-lucide="sun" class="sun-icon"></i>
+                    <i data-lucide="moon" class="moon-icon"></i>
+                </button>
+            </div>
+
+        </div>
+    </header>
+
+    <!-- ========================================================= -->
+    <!-- MAIN DASHBOARD CONTENT (Point 1, 7, 12, 13)               -->
+    <!-- ========================================================= -->
+    <main class="main-dashboard-grid">
+
+        <!-- ===================================================== -->
+        <!-- LEFT COLUMN: 3D Globe, Live Hero, Sunrise & Forecast  -->
+        <!-- ===================================================== -->
+        <section class="dashboard-column primary-column">
+
+            <!-- POINT 7.c & POINT 12: The Globe -->
+            <div class="card glass-panel globe-hero-card">
+                <div class="card-header-bar">
+                    <div class="indicator-title">
+                        <span class="status-ping"></span>
+                        <h2>The Globe</h2>
+                    </div>
+                    <div class="globe-coordinates-badge" id="target-coords">
+                        Target: 28.61° N, 77.20° E
+                    </div>
+                </div>
+
+                <!-- WebGL Canvas Container -->
+                <div id="globe-3d-container" class="globe-viewport">
+                    <div class="globe-marker-label" id="globe-marker-tooltip">
+                        <span class="marker-city-name" id="marker-city-display">New Delhi</span>
+                        <span class="marker-temp" id="marker-temp-display">--°C</span>
+                    </div>
+                </div>
+
+                <div class="globe-controls-hint">
+                    <i data-lucide="globe"></i>
+                    <span>Auto-rotates & targets searched coordinates • Touch/Drag to orbit</span>
+                </div>
+            </div>
+
+            <!-- POINT 7.a: Current Weather Main Hero Card -->
+            <div class="card glass-panel current-weather-card">
+                <div class="current-weather-main">
+                    <div class="location-metadata">
+                        <div class="location-badge">
+                            <i data-lucide="map-pin"></i>
+                            <span id="selected-location-name">New Delhi, India</span>
+                        </div>
+                        <span class="observation-time" id="observation-timestamp">Live Telemetry</span>
+                    </div>
+
+                    <div class="hero-temperature-display">
+                        <div class="temp-number-group">
+                            <span id="current-temp-val" class="massive-temp">--</span>
+                            <span class="temp-unit">°C</span>
+                        </div>
+                        <div class="condition-group">
+                            <div id="weather-condition-icon" class="dynamic-weather-icon">
+                                <i data-lucide="sun"></i>
+                            </div>
+                            <span id="weather-description-text" class="condition-phrase">Fetching...</span>
+                        </div>
+                    </div>
+
+                    <!-- Quick Telemetry Chips -->
+                    <div class="quick-telemetry-row">
+                        <div class="quick-chip">
+                            <span>High / Low</span>
+                            <strong id="temp-high-low">--° / --°</strong>
+                        </div>
+                        <div class="quick-chip">
+                            <span>Condition</span>
+                            <strong id="climate-status-badge">Analyzing</strong>
+                        </div>
+                        <div class="quick-chip">
+                            <span>Visibility</span>
+                            <strong id="visibility-metric">-- km</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUNRISE & SUNSET HORIZON TRACKER CARD -->
+            <div class="card glass-panel sun-cycle-card">
+                <div class="card-header-bar">
+                    <div class="indicator-title">
+                        <i data-lucide="sun-medium" class="sun-cycle-title-icon"></i>
+                        <h3>Solar Horizon & Day Cycle</h3>
+                    </div>
+                    <span class="daylight-badge" id="daylight-duration-text">Daylight: -- hrs</span>
+                </div>
+
+                <div class="sun-times-grid">
+                    <div class="sun-time-box">
+                        <div class="sun-icon-wrap sunrise">
+                            <i data-lucide="sunrise"></i>
+                        </div>
+                        <div class="sun-details">
+                            <span class="sun-label">Sunrise</span>
+                            <strong id="sunrise-val" class="sun-val">--:-- AM</strong>
+                        </div>
+                    </div>
+
+                    <div class="sun-path-divider">
+                        <div class="sun-orbit-line"></div>
+                    </div>
+
+                    <div class="sun-time-box">
+                        <div class="sun-icon-wrap sunset">
+                            <i data-lucide="sunset"></i>
+                        </div>
+                        <div class="sun-details">
+                            <span class="sun-label">Sunset</span>
+                            <strong id="sunset-val" class="sun-val">--:-- PM</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- POINT 7.g: 7-DAY SYNOPTIC EXTENDED FORECAST CARD -->
+            <div class="card glass-panel forecast-card">
+                <div class="card-header-bar">
+                    <div class="indicator-title">
+                        <i data-lucide="calendar-days"></i>
+                        <h3>7-Day Synoptic Forecast</h3>
+                    </div>
+                    <span class="forecast-range-label">Daily Min/Max</span>
+                </div>
+
+                <div class="forecast-list-horizontal" id="forecast-7day-container">
+                    <!-- Daily Forecast cards injected synchronously via script.js -->
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ===================================================== -->
+        <!-- RIGHT COLUMN: Running Status & Telemetry -->
+        <!-- ===================================================== -->
+        <section class="dashboard-column secondary-column">
+
+            <!-- RUNNING STATUS & OUTDOOR FITNESS VIABILITY CARD -->
+            <div class="card glass-panel running-status-card">
+                <div class="card-header-bar">
+                    <div class="indicator-title">
+                        <i data-lucide="activity" class="running-card-icon"></i>
+                        <h3>Running & Outdoor Fitness Viability</h3>
+                    </div>
+                    <div id="running-status-badge" class="running-status-pill optimal">
+                        <span class="running-indicator-dot"></span>
+                        <span id="running-status-text">Analyzing</span>
+                    </div>
+                </div>
+
+                <div class="running-analysis-body">
+                    <p id="running-status-desc" class="running-description">
+                        Aggregating thermal comfort, atmospheric moisture, air particulates, and wind velocity...
+                    </p>
+                    <div class="running-factors-row">
+                        <div class="factor-chip">
+                            <span>Thermal Strain:</span>
+                            <strong id="thermal-factor">Normal</strong>
+                        </div>
+                        <div class="factor-chip">
+                            <span>Precipitation:</span>
+                            <strong id="rain-factor">Dry Surface</strong>
+                        </div>
+                        <div class="factor-chip">
+                            <span>Respiration Safety:</span>
+                            <strong id="respiration-factor">Safe</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- POINT 7.b, 7.d, 7.e: Secondary Telemetry Metrics Grid -->
+            <div class="metrics-grid">
+                
+                <!-- POINT 7.b: Relative Humidity -->
+                <div class="card glass-panel metric-card">
+                    <div class="metric-card-head">
+                        <span class="metric-label">Relative Humidity</span>
+                        <i data-lucide="droplets" class="metric-icon humidity-icon"></i>
+                    </div>
+                    <div class="metric-body">
+                        <div class="metric-val-wrap">
+                            <span id="humidity-val" class="metric-number">--</span>
+                            <span class="metric-symbol">%</span>
+                        </div>
+                        <div class="metric-gauge-bar">
+                            <div id="humidity-bar-fill" class="gauge-fill" style="width: 0%;"></div>
+                        </div>
+                        <span class="metric-remark" id="humidity-remark">Atmospheric Moisture</span>
+                    </div>
+                </div>
+
+                <!-- POINT 7.d: Wind Velocity & Direction -->
+                <div class="card glass-panel metric-card">
+                    <div class="metric-card-head">
+                        <span class="metric-label">Wind Velocity</span>
+                        <i data-lucide="wind" class="metric-icon wind-icon"></i>
+                    </div>
+                    <div class="metric-body">
+                        <div class="metric-val-wrap">
+                            <span id="wind-val" class="metric-number">--</span>
+                            <span class="metric-symbol">km/h</span>
+                        </div>
+                        <div class="wind-vector-indicator">
+                            <i data-lucide="navigation" id="wind-compass-needle"></i>
+                            <span id="wind-direction-text">--</span>
+                        </div>
+                        <span class="metric-remark" id="wind-remark">Surface Breeze</span>
+                    </div>
+                </div>
+
+                <!-- POINT 7.e: Surface Barometric Pressure -->
+                <div class="card glass-panel metric-card">
+                    <div class="metric-card-head">
+                        <span class="metric-label">Surface Pressure</span>
+                        <i data-lucide="gauge" class="metric-icon pressure-icon"></i>
+                    </div>
+                    <div class="metric-body">
+                        <div class="metric-val-wrap">
+                            <span id="pressure-val" class="metric-number">--</span>
+                            <span class="metric-symbol">hPa</span>
+                        </div>
+                        <div class="pressure-scale-indicator">
+                            <span class="scale-point low">Low</span>
+                            <span class="scale-point normal active">Normal</span>
+                            <span class="scale-point high">High</span>
+                        </div>
+                        <span class="metric-remark" id="pressure-remark">Barometric State</span>
+                    </div>
+                </div>
+
+                <!-- Solar UV Index -->
+                <div class="card glass-panel metric-card">
+                    <div class="metric-card-head">
+                        <span class="metric-label">Solar UV Index</span>
+                        <i data-lucide="sun-medium" class="metric-icon uv-icon"></i>
+                    </div>
+                    <div class="metric-body">
+                        <div class="metric-val-wrap">
+                            <span id="uv-index-val" class="metric-number">--</span>
+                            <span class="metric-symbol">UV</span>
+                        </div>
+                        <div class="uv-scale-bar">
+                            <div id="uv-bar-fill" class="gauge-fill" style="width: 0%;"></div>
+                        </div>
+                        <span class="metric-remark" id="uv-remark">Solar Radiation Level</span>
+                    </div>
+                </div>
+
+                <!-- POINT 7.h: Air Quality Index (AQI) Card -->
+                <div class="card glass-panel metric-card aqi-card">
+                    <div class="metric-card-head">
+                        <span class="metric-label">Air Quality Index (US AQI)</span>
+                        <i data-lucide="shield-alert" class="metric-icon aqi-icon"></i>
+                    </div>
+                    <div class="metric-body">
+                        <div class="aqi-main-display">
+                            <div class="aqi-circle-badge" id="aqi-badge-color">
+                                <span id="aqi-val">--</span>
+                            </div>
+                            <div class="aqi-details-text">
+                                <strong id="aqi-category-title">Evaluating</strong>
+                                <span id="aqi-advisory">Fetching environmental telemetry...</span>
+                            </div>
+                        </div>
+                        <div class="particulate-row">
+                            <div class="particulate-pill">PM2.5: <strong id="pm25-val">-- µg/m³</strong></div>
+                            <div class="particulate-pill">PM10: <strong id="pm10-val">-- µg/m³</strong></div>
+                            <div class="particulate-pill">Ozone: <strong id="ozone-val">-- µg/m³</strong></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- ========================================================= -->
+    <!-- POINT 4 & 5: LOCKED BOTTOM FOOTER WITH FLUID GRADIENT     -->
+    <!-- ========================================================= -->
+    <footer class="app-locked-footer" id="main-pinned-footer">
+        <div class="footer-content-wrapper">
+            <p class="footer-attribution-text">
+                A mini project developed by 
+                <span class="fluid-gradient-college">ITS Engineering College</span> 
+                students
+            </p>
+        </div>
+    </footer>
+
+    <!-- ========================================================= -->
+    <!-- JAVASCRIPT DEPENDENCIES & CONTROLLER                      -->
+    <!-- ========================================================= -->
+    <!-- Three.js (For Realistic WebGL 3D Earth) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <!-- Main Application Logic -->
+    <script src="script.js"></script>
+
+    <!-- Initialize Lucide Icons -->
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>
